@@ -1,13 +1,23 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
 // Wraps PrismaClient so it can be injected anywhere via Nest's DI container,
 // and hooks into Nest's lifecycle to connect/disconnect cleanly.
+// Prisma 7 requires an explicit driver adapter instead of a bundled query engine.
 @Injectable()
 export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
+  constructor(configService: ConfigService) {
+    const adapter = new PrismaPg({
+      connectionString: configService.get<string>('DATABASE_URL')!,
+    });
+    super({ adapter });
+  }
+
   async onModuleInit() {
     await this.$connect();
   }
