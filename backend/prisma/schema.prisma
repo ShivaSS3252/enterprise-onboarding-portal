@@ -1,0 +1,79 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+enum TaskStatus {
+  PENDING
+  COMPLETED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  role      Role     @default(EMPLOYEE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Tasks assigned to this user (as an employee)
+  assignedTasks OnboardingTask[] @relation("AssignedTasks")
+
+  // Tasks this user created (as an admin)
+  createdTasks OnboardingTask[] @relation("CreatedTasks")
+
+  documents Document[]
+
+  @@map("users")
+}
+
+model OnboardingTask {
+  id          String     @id @default(uuid())
+  title       String
+  description String?
+  status      TaskStatus @default(PENDING)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  completedAt DateTime?
+
+  assignedTo   User   @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  assignedToId String
+
+  createdBy   User   @relation("CreatedTasks", fields: [createdById], references: [id])
+  createdById String
+
+  documents Document[]
+
+  @@map("onboarding_tasks")
+}
+
+model Document {
+  id        String   @id @default(uuid())
+  fileName  String
+  filePath  String
+  mimeType  String
+  sizeBytes Int
+  createdAt DateTime @default(now())
+
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id])
+  uploadedById String
+
+  // Optional: a document can (but doesn't have to) be linked to a specific task
+  task   OnboardingTask? @relation(fields: [taskId], references: [id])
+  taskId String?
+
+  @@map("documents")
+}
