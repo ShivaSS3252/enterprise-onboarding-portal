@@ -1,0 +1,20 @@
+node_modules
+dist
+coverage
+
+# Never bake secrets into an image layer — env vars are injected at container runtime instead
+.env
+.env.*
+
+# Locally uploaded files — not part of the app itself
+uploads
+
+.git
+.gitignore
+.dockerignore
+Dockerfile
+
+*.md
+.vscode
+.idea
+npm-debug.log
