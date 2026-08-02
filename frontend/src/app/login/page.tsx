@@ -3,12 +3,14 @@
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { login } from '@/lib/api';
-import { saveToken } from '@/lib/auth';
-import { ApiError } from '@/lib/api';
+import { login, ApiError } from '@/lib/api';
+import { saveToken, decodeToken } from '@/lib/auth';
+import { useAppDispatch } from '@/store/hooks';
+import { setUser } from '@/store/slices/auth-slice';
 
 export default function LoginPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -22,6 +24,11 @@ export default function LoginPage() {
     try {
       const { accessToken } = await login(email, password);
       saveToken(accessToken);
+      // Populate Redux immediately from the token we just received, so any
+      // component reading auth state (e.g. a future Navbar) is correct right
+      // away, without waiting for a separate /auth/me round-trip.
+      const decoded = decodeToken(accessToken);
+      if (decoded) dispatch(setUser(decoded));
       router.push('/dashboard');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong');
