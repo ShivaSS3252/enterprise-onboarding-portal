@@ -1,4 +1,4 @@
-import { getToken } from './auth';
+import { getToken, type JwtPayload } from './auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -61,4 +61,12 @@ export function register(dto: {
     method: 'POST',
     body: JSON.stringify(dto),
   });
+}
+
+// The backend's GET /auth/me returns the decoded JWT payload verbatim
+// (see backend AuthController.me), so it matches JwtPayload exactly.
+// Hits the real backend to confirm the token is still valid server-side —
+// deliberately not just trusting the locally-decoded JWT's exp claim.
+export function getMe() {
+  return apiFetch<JwtPayload>('/auth/me');
 }

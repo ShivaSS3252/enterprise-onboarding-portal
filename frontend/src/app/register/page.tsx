@@ -4,10 +4,13 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { register, ApiError } from '@/lib/api';
-import { saveToken } from '@/lib/auth';
+import { saveToken, decodeToken } from '@/lib/auth';
+import { useAppDispatch } from '@/store/hooks';
+import { setUser } from '@/store/slices/auth-slice';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const [form, setForm] = useState({ email: '', password: '', firstName: '', lastName: '' });
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,6 +30,8 @@ export default function RegisterPage() {
       // see backend AuthService.register) — there is no role field here at all.
       const { accessToken } = await register(form);
       saveToken(accessToken);
+      const decoded = decodeToken(accessToken);
+      if (decoded) dispatch(setUser(decoded));
       router.push('/dashboard');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong');
