@@ -6,6 +6,13 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // The frontend runs on a different origin (port) than this API, so the browser
+  // blocks requests unless the server explicitly allows it via CORS.
+  app.enableCors({
+    origin: process.env.FRONTEND_URL ?? 'http://localhost:3001',
+    credentials: true,
+  });
+
   // Global validation: every incoming request body is checked against its
   // DTO's class-validator decorators before it reaches a controller.
   app.useGlobalPipes(
