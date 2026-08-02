@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -14,6 +15,19 @@ async function bootstrap() {
       transform: true, // auto-convert payloads into DTO class instances
     }),
   );
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Enterprise Onboarding & Asset Management API')
+    .setDescription(
+      'Admin/Employee onboarding portal — auth, user management, onboarding tasks, and document uploads.',
+    )
+    .setVersion('1.0')
+    // Registers the "Authorize" button in the Swagger UI; any route with
+    // @ApiBearerAuth() will let you attach a JWT and test protected routes directly.
+    .addBearerAuth()
+    .build();
+  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api/docs', app, swaggerDocument);
 
   await app.listen(process.env.PORT ?? 3000);
 }

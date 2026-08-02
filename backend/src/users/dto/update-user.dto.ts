@@ -1,4 +1,6 @@
-import { PartialType, OmitType } from '@nestjs/mapped-types';
+// @nestjs/swagger's PartialType/OmitType (not @nestjs/mapped-types') are used here
+// so the derived DTO keeps the @ApiProperty() metadata from CreateUserDto in the Swagger docs.
+import { PartialType, OmitType } from '@nestjs/swagger';
 import { CreateUserDto } from './create-user.dto';
 
 // All CreateUserDto fields become optional, and password can't be updated
