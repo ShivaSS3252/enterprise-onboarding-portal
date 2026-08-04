@@ -24,11 +24,15 @@ export async function apiFetch<T>(
   tokenOverride?: string | null,
 ): Promise<T> {
   const token = tokenOverride ?? getToken();
+  // FormData bodies (file uploads) must NOT get a manual Content-Type — the
+  // browser needs to set its own multipart boundary, which we'd otherwise
+  // override and break.
+  const isFormData = options.body instanceof FormData;
 
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
@@ -122,4 +126,40 @@ export function createTask(dto: { title: string; description?: string; assignedT
 
 export function deleteTask(id: string) {
   return apiFetch<void>(`/onboarding/${id}`, { method: 'DELETE' });
+}
+
+export function getMyTasks(token?: string | null) {
+  return apiFetch<OnboardingTask[]>('/onboarding/mine', {}, token);
+}
+
+export function completeTask(id: string) {
+  return apiFetch<OnboardingTask>(`/onboarding/${id}/complete`, { method: 'PATCH' });
+}
+
+export interface AppDocument {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  createdAt: string;
+  taskId: string | null;
+}
+
+export function getMyDocuments(token?: string | null) {
+  return apiFetch<AppDocument[]>('/documents/mine', {}, token);
+}
+
+export function uploadDocument(file: File, taskId?: string) {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (taskId) formData.append('taskId', taskId);
+
+  return apiFetch<AppDocument>('/documents', {
+    method: 'POST',
+    body: formData,
+  });
+}
+
+export function deleteDocument(id: string) {
+  return apiFetch<void>(`/documents/${id}`, { method: 'DELETE' });
 }
