@@ -11,11 +11,19 @@ export class ApiError extends Error {
   }
 }
 
-// Central fetch wrapper: attaches the JWT (if present) to every request,
-// and normalizes error responses into a typed ApiError instead of every
-// caller having to check response.ok manually.
-export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = getToken();
+// Central fetch wrapper: attaches the JWT to every request, and normalizes
+// error responses into a typed ApiError instead of every caller having to
+// check response.ok manually.
+//
+// `tokenOverride` lets Server Components pass a token read from a cookie
+// (via next/headers) — getToken() itself only ever works in the browser,
+// since it reads localStorage.
+export async function apiFetch<T>(
+  path: string,
+  options: RequestInit = {},
+  tokenOverride?: string | null,
+): Promise<T> {
+  const token = tokenOverride ?? getToken();
 
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
@@ -69,4 +77,49 @@ export function register(dto: {
 // deliberately not just trusting the locally-decoded JWT's exp claim.
 export function getMe() {
   return apiFetch<JwtPayload>('/auth/me');
+}
+
+export interface BasicUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+export interface OnboardingTask {
+  id: string;
+  title: string;
+  description: string | null;
+  status: 'PENDING' | 'COMPLETED';
+  createdAt: string;
+  completedAt: string | null;
+  assignedTo: BasicUser;
+  createdBy: BasicUser;
+}
+
+export interface AppUser extends BasicUser {
+  role: 'ADMIN' | 'EMPLOYEE';
+  createdAt: string;
+}
+
+// Each accepts an optional token override so the same function works from
+// both a Server Component (passing a cookie-derived token) and a Client
+// Component (omitting it, falling back to localStorage inside apiFetch).
+export function getAllTasks(token?: string | null) {
+  return apiFetch<OnboardingTask[]>('/onboarding', {}, token);
+}
+
+export function getAllUsers(token?: string | null) {
+  return apiFetch<AppUser[]>('/users', {}, token);
+}
+
+export function createTask(dto: { title: string; description?: string; assignedToId: string }) {
+  return apiFetch<OnboardingTask>('/onboarding', {
+    method: 'POST',
+    body: JSON.stringify(dto),
+  });
+}
+
+export function deleteTask(id: string) {
+  return apiFetch<void>(`/onboarding/${id}`, { method: 'DELETE' });
 }

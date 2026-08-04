@@ -9,7 +9,7 @@ export interface JwtPayload {
   exp: number;
 }
 
-const TOKEN_KEY = 'access_token';
+export const TOKEN_KEY = 'access_token';
 
 // `localStorage` only exists in the browser — but even a page made entirely
 // of Client Components is still prerendered once on the server at build time
@@ -19,6 +19,13 @@ const TOKEN_KEY = 'access_token';
 export function saveToken(token: string) {
   if (typeof window === 'undefined') return;
   localStorage.setItem(TOKEN_KEY, token);
+  // Also written as a plain (non-httpOnly) cookie so Server Components can read
+  // it via next/headers `cookies()` for SSR data fetching. This is NOT more secure
+  // than localStorage — still readable by any client-side script — it exists
+  // purely to bridge the token across to the server render. A true httpOnly
+  // cookie would require the backend (or a Next.js Route Handler acting as a
+  // Backend-for-Frontend) to set it via a Set-Cookie response header instead.
+  document.cookie = `${TOKEN_KEY}=${token}; path=/; max-age=86400; SameSite=Lax`;
 }
 
 export function getToken(): string | null {
@@ -29,6 +36,7 @@ export function getToken(): string | null {
 export function clearToken() {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(TOKEN_KEY);
+  document.cookie = `${TOKEN_KEY}=; path=/; max-age=0`;
 }
 
 export function decodeToken(token: string): JwtPayload | null {
