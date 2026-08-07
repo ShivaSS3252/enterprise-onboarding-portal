@@ -8,8 +8,14 @@ async function bootstrap() {
 
   // The frontend runs on a different origin (port) than this API, so the browser
   // blocks requests unless the server explicitly allows it via CORS.
+  // FRONTEND_URL supports a comma-separated list — the normal dev server (3001)
+  // and Playwright's dedicated E2E test server (3002, see frontend/playwright.config.ts)
+  // are different origins and both need to be allowed.
+  const allowedOrigins = (process.env.FRONTEND_URL ?? 'http://localhost:3001')
+    .split(',')
+    .map((origin) => origin.trim());
   app.enableCors({
-    origin: process.env.FRONTEND_URL ?? 'http://localhost:3001',
+    origin: allowedOrigins,
     credentials: true,
   });
 
